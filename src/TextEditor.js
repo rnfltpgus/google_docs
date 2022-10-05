@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 
 import { io } from 'socket.io-client';
 import Quill from 'quill';
@@ -17,17 +18,30 @@ const TOOLBAR_OPTIONS = [
 ];
 
 const TextEditor = () => {
+  const { id: documentId } = useParams();
   const [socket, setSocket] = useState();
   const [quill, setQuill] = useState();
 
   useEffect(() => {
     const socketConnection = io('http://localhost:3001');
+
     setSocket(socketConnection);
 
     return () => {
       socketConnection.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    if (socket == null || quill == null) return;
+
+    socket.once('load-document', (document) => {
+      quill.setContents(document);
+      quill.enable();
+    });
+
+    socket.emit('get-document', documentId);
+  }, [socket, quill, documentId]);
 
   useEffect(() => {
     if (socket == null || quill == null) return;
@@ -71,6 +85,9 @@ const TextEditor = () => {
       theme: 'snow',
       modules: { toolbar: TOOLBAR_OPTIONS },
     });
+
+    q.disable();
+    q.setText('🏃🏻 Loading...');
     setQuill(q);
   }, []);
 
