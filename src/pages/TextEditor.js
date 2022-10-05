@@ -46,6 +46,18 @@ const TextEditor = () => {
   useEffect(() => {
     if (socket == null || quill == null) return;
 
+    const interval = setInterval(() => {
+      socket.emit('save-document', quill.getContents());
+    }, process.env.SAVE_INTERVAL_MS);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [socket, quill]);
+
+  useEffect(() => {
+    if (socket == null || quill == null) return;
+
     const handler = (delta) => {
       quill.updateContents(delta);
     };
